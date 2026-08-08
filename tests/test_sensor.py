@@ -1,4 +1,5 @@
 """Tests of the nefiteasy sensor integration."""
+
 from datetime import timedelta
 
 from freezegun.api import FrozenDateTimeFactory
