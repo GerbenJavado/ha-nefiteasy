@@ -287,8 +287,11 @@ class NefitEasy(DataUpdateCoordinator):
                 for _url in self._urls:
                     await self._async_get_url(_url)
             except Exception as ex:
+                _LOGGER.warning(
+                    "Nefit Easy communication error, resetting connection state: %s", ex
+                )
                 self.connected_state = STATE_INIT
-                raise UpdateFailed(f"Error fetching data: {ex}") from ex
+                raise UpdateFailed(f"Error communicating with Nefit Easy: {ex}") from ex
 
         return self._data
 
