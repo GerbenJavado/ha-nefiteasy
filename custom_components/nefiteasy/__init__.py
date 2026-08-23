@@ -48,7 +48,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if client.connected_state == STATE_CONNECTION_VERIFIED:
         hass.data[DOMAIN][entry.entry_id]["client"] = client
     else:
-        raise ConfigEntryNotReady
+        raise ConfigEntryNotReady(
+            f"Unable to verify connection to {credentials[CONF_SERIAL]}, "
+            f"state: {client.connected_state}"
+        )
 
     await hass.config_entries.async_forward_entry_setups(entry, DOMAINS)
 
@@ -144,8 +147,12 @@ class NefitEasy(DataUpdateCoordinator):
                 )
             except asyncio.TimeoutError:
                 _LOGGER.debug("TimeoutError on waiting for connected event.")
-            except:  # noqa: E722 pylint: disable=bare-except
-                _LOGGER.debug("Unknown error.")
+            except asyncio.CancelledError:
+                raise
+            except Exception as ex:
+                _LOGGER.debug(
+                    "Unknown error waiting for connected event: %r", ex
+                )
             else:
                 _LOGGER.debug("Connected successfully.")
                 self.connected_state = STATE_CONNECTED
@@ -169,8 +176,12 @@ class NefitEasy(DataUpdateCoordinator):
                     _LOGGER.debug(
                         "Did not get a response in time for testing connection."
                     )
-                except:  # noqa: E722 pylint: disable=bare-except
-                    _LOGGER.debug("No connection while testing connection.")
+                except asyncio.CancelledError:
+                    raise
+                except Exception as ex:
+                    _LOGGER.debug(
+                        "No connection while testing connection: %r", ex
+                    )
                 else:
                     _LOGGER.debug("Message event received")
 
@@ -180,7 +191,7 @@ class NefitEasy(DataUpdateCoordinator):
                     if self.connected_state == STATE_CONNECTED:
                         self.connected_state = STATE_CONNECTION_VERIFIED
 
-            if self.connected_state != STATE_CONNECTION_VERIFIED:
+            if self.connected_state == STATE_CONNECTION_VERIFIED:
                 _LOGGER.debug("Successfully verified connection.")
 
             _LOGGER.debug("Set is connecting to false")
@@ -293,10 +304,15 @@ class NefitEasy(DataUpdateCoordinator):
                     await self._async_get_url(_url)
             except Exception as ex:
                 _LOGGER.warning(
-                    "Nefit Easy communication error, resetting connection state: %s", ex
+                    "Nefit Easy communication error on %s, resetting "
+                    "connection state: %r",
+                    _url,
+                    ex,
                 )
                 self.connected_state = STATE_INIT
-                raise UpdateFailed(f"Error communicating with Nefit Easy: {ex}") from ex
+                raise UpdateFailed(
+                    f"Error communicating with Nefit Easy on {_url}: {ex!r}"
+                ) from ex
 
         return self._data
 
