@@ -150,9 +150,7 @@ class NefitEasy(DataUpdateCoordinator):
             except asyncio.CancelledError:
                 raise
             except Exception as ex:
-                _LOGGER.debug(
-                    "Unknown error waiting for connected event: %r", ex
-                )
+                _LOGGER.debug("Unknown error waiting for connected event: %r", ex)
             else:
                 _LOGGER.debug("Connected successfully.")
                 self.connected_state = STATE_CONNECTED
@@ -179,9 +177,7 @@ class NefitEasy(DataUpdateCoordinator):
                 except asyncio.CancelledError:
                     raise
                 except Exception as ex:
-                    _LOGGER.debug(
-                        "No connection while testing connection: %r", ex
-                    )
+                    _LOGGER.debug("No connection while testing connection: %r", ex)
                 else:
                     _LOGGER.debug("Message event received")
 
