@@ -130,6 +130,12 @@ class NefitEasy(DataUpdateCoordinator):
             _LOGGER.debug("Set is connecting to true")
             self.is_connecting = True
 
+            # Events from a previous session may still be set; without
+            # clearing them the waits below would return instantly and
+            # verify against a dead transport. Clear BEFORE connecting
+            # so a genuine handshake can set them again afterwards.
+            self.nefit.xmppclient.connected_event.clear()
+            self.nefit.xmppclient.message_event.clear()
             await self.nefit.connect()
             _LOGGER.debug("Waiting for connected event.")
             try:
@@ -218,14 +224,13 @@ class NefitEasy(DataUpdateCoordinator):
 
     async def session_end_callback(self) -> None:
         """If connection is closed unexpectedly, try to reconnect."""
-        if not self.expected_end:
+        if not self.expected_end and self.connected_state != STATE_INIT:
             _LOGGER.debug(
                 f"Unexpected disconnect of {self.serial} with Bosch server. Try to reconnect.."
             )
 
             # Reset values
             self.connected_state = STATE_INIT
-            self.expected_end = False
 
             # Schedule an immediate reconnect rather than waiting up to 60s
             # for the next scheduled poll cycle.
