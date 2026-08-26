@@ -115,10 +115,7 @@ async def test_connect_clears_stale_events(mock_class, hass: HomeAssistant):
 @patch("custom_components.nefiteasy.NefitCore")
 async def test_duplicate_session_end_suppression(mock_class, hass: HomeAssistant):
     """Test that duplicate unexpected session_end calls only schedule a single refresh."""
-    from custom_components.nefiteasy.const import (
-        STATE_CONNECTION_VERIFIED,
-        STATE_INIT,
-    )
+    from custom_components.nefiteasy.const import STATE_CONNECTION_VERIFIED, STATE_INIT
 
     client = ClientMock(mock_class)
     mock_class.return_value = client
@@ -141,5 +138,3 @@ async def test_duplicate_session_end_suppression(mock_class, hass: HomeAssistant
         # Duplicate unexpected disconnect arriving immediately after
         await coordinator.session_end_callback()
         assert mock_refresh.call_count == 1
-
-
